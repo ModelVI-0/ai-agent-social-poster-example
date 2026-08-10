@@ -1,143 +1,88 @@
+#!/usr/bin/env python3
 """
 ai-agent-social-poster-example
-==============================
 
-Minimal, runnable-shaped example of an AI agent that posts on a creator's
-behalf across social platforms, using the ModelVI agent endpoint:
+AI agent posting: an autonomous agent publishes on a creator's behalf across
+OnlyFans and 13 other creator platforms, via the public ModelVI partner API.
 
-    https://agents.modelvi.com
+Pattern: `skill.md` + API key. An LLM agent (Claude, GPT, or your own) reads a
+short skill file, authenticates with a partner key, and calls POST /schedule.
 
-Pattern demonstrated: `skill.md` + API key.
-  1. An AI agent (Claude, GPT, or your own LLM workflow) reads a `skill.md`
-     that describes the ModelVI posting capability in plain language.
-  2. The agent authenticates with a per-creator API key.
-  3. The agent submits a post (caption + optional media) to the creator's
-     connected social platforms on the creator's behalf.
+  Get your API key:  https://modelvi.com/sign-up
+  Agent API docs:    https://modelvi.com/agent-api
+  Connect an agent:  https://modelvi.com/link-agent
 
-IMPORTANT — THIS IS AN EXAMPLE INTEGRATION.
-  The endpoint path, headers, and payload fields below are PLACEHOLDERS chosen
-  to illustrate the pattern. The authoritative, live endpoints and request/
-  response schemas are documented at:
-
-    https://agents.modelvi.com/docs
-
-  Copy the real values from the docs before running against production. Do not
-  assume the response handling below reflects the real schema.
-
-Requires an API key: https://agents.modelvi.com
+Minimal EXAMPLE (no retries/pagination/media upload). Public partner API only.
 
 Usage:
-    export API_KEY=your_api_key_here
-    python post_via_agent.py "Hello from my autonomous social agent"
+    export MODELVI_API_KEY="mvk_<keyId>_<secret>"
+    python example.py "Hello from my autonomous social agent"
 """
 
-import json
 import os
 import sys
-import urllib.error
-import urllib.request
+from datetime import datetime, timezone, timedelta
 
-# ---------------------------------------------------------------------------
-# Configuration — read from the environment (see .env.example in the README)
-# ---------------------------------------------------------------------------
+import requests  # pip install requests
 
-# Your ModelVI agent API key. Get one at https://agents.modelvi.com
-API_KEY = os.environ.get("API_KEY")
+BASE_URL = os.environ.get("MODELVI_API_BASE", "https://modelvi.com/api/partner/v1")
+API_KEY = os.environ.get("MODELVI_API_KEY")
+SIGNUP_URL = "https://modelvi.com/sign-up"
 
-# Base URL of the ModelVI agent endpoint.
-# PLACEHOLDER default — replace with the real base URL from
-# https://agents.modelvi.com/docs
-BASE_URL = os.environ.get("BASE_URL", "https://agents.modelvi.com/api")
-
-# PLACEHOLDER path — replace with the real endpoint from
-# https://agents.modelvi.com/docs
-POST_ENDPOINT = "/v1/agent/post"  # <-- example only; confirm in the live docs
+# Post type: 1 = FREE, 2 = FANS, 3 = PAID.
+TYPE_FREE = 1
 
 
-def post_on_behalf_of_creator(caption, platforms=None, media_urls=None):
-    """Publish a post on the creator's behalf via the ModelVI agent endpoint.
-
-    This is the core of the "ai agent posting" flow: an autonomous social
-    agent authenticates with an API key and submits one post that ModelVI
-    distributes to the creator's connected platforms.
-
-    Args:
-        caption:    The post text (required).
-        platforms:  Optional list of target platforms. Omit/None to let the
-                    creator's connected-account defaults decide.
-        media_urls: Optional list of public media URLs to attach.
-
-    Returns:
-        The parsed JSON response from the endpoint.
-
-    NOTE: The request shape below is a PLACEHOLDER. Match it to the real
-    contract at https://agents.modelvi.com/docs.
-    """
+def _headers():
     if not API_KEY:
-        raise RuntimeError(
-            "Missing API_KEY. Get your API key at https://agents.modelvi.com "
-            "and export it: `export API_KEY=your_api_key_here`"
+        sys.exit(
+            f"Missing MODELVI_API_KEY. Get a key at {SIGNUP_URL} and export it:\n"
+            f'  export MODELVI_API_KEY="mvk_<keyId>_<secret>"'
         )
+    return {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
 
-    url = BASE_URL.rstrip("/") + POST_ENDPOINT
 
-    # PLACEHOLDER payload — confirm field names/types at
-    # https://agents.modelvi.com/docs
-    payload = {
-        "caption": caption,
-        "platforms": platforms or [],      # empty = use creator defaults
-        "media_urls": media_urls or [],
+def _payload(resp):
+    """Envelope { success, payload } -> payload. 401 routes back to signup."""
+    if resp.status_code == 401:
+        sys.exit(f"Unauthorized (401). Get a valid key at {SIGNUP_URL}")
+    resp.raise_for_status()
+    body = resp.json()
+    return body.get("payload", body)
+
+
+def _first_model_id():
+    models = _payload(requests.get(f"{BASE_URL}/model_list", headers=_headers(), timeout=30))
+    if not models:
+        sys.exit("No models on this account yet — add one in your ModelVI dashboard.")
+    model = models[0] if isinstance(models, list) else models.get("items", [{}])[0]
+    return model.get("id") or model.get("model")
+
+
+def agent_post(caption, platforms=None):
+    """The core 'AI agent posting' call: publish on the creator's behalf.
+
+    Omit `platforms` to target all connected creator platforms.
+    """
+    model = _first_model_id()
+    when = datetime.now(timezone.utc) + timedelta(minutes=5)
+    body = {
+        "model": model,
+        "platforms": platforms or ["ONLYFANS", "FANSLY", "FANCENTRO"],
+        "title": caption,                                  # caption field is `title`
+        "scheduledAt": when.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "type": TYPE_FREE,
     }
-
-    data = json.dumps(payload).encode("utf-8")
-
-    request = urllib.request.Request(url, data=data, method="POST")
-    # API key auth. The exact header name/scheme is confirmed in the docs.
-    request.add_header("Authorization", f"Bearer {API_KEY}")
-    request.add_header("Content-Type", "application/json")
-
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            body = response.read().decode("utf-8")
-    except urllib.error.HTTPError as err:
-        # Surface the server message to the operator/agent. We do NOT invent a
-        # response schema here — read the actual error format from the docs.
-        detail = err.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Request failed ({err.code}): {detail}") from err
-    except urllib.error.URLError as err:
-        raise RuntimeError(
-            f"Could not reach {url}. This is an EXAMPLE endpoint — set BASE_URL "
-            f"and POST_ENDPOINT to the real values from "
-            f"https://agents.modelvi.com/docs. Underlying error: {err.reason}"
-        ) from err
-
-    # The real response schema is documented at agents.modelvi.com/docs.
-    # We return the parsed JSON as-is rather than assuming any fields.
-    try:
-        return json.loads(body)
-    except json.JSONDecodeError:
-        return {"raw_response": body}
+    return _payload(requests.post(f"{BASE_URL}/schedule", json=body,
+                                  headers=_headers(), timeout=30))
 
 
 def main(argv):
     caption = argv[1] if len(argv) > 1 else "Hello from my autonomous social agent"
-
-    print("ai-agent-social-poster-example")
-    print("Pattern: skill.md + API key  ->  AI agent posting on the creator's behalf")
-    print(f"Endpoint (PLACEHOLDER): {BASE_URL.rstrip('/') + POST_ENDPOINT}")
-    print("Confirm the real endpoint at https://agents.modelvi.com/docs\n")
-
-    try:
-        result = post_on_behalf_of_creator(caption)
-    except RuntimeError as err:
-        print(f"[error] {err}")
-        print("\nGet your API key at https://agents.modelvi.com")
-        return 1
-
-    # The shape of `result` depends on the live API — see the docs. We just
-    # echo what came back so this example stays honest.
-    print("Response (schema per https://agents.modelvi.com/docs):")
-    print(json.dumps(result, indent=2))
+    print("ai-agent-social-poster — skill.md + API key -> AI agent posting")
+    print(f"POST {BASE_URL}/schedule  (reference: https://modelvi.com/agent-api)\n")
+    result = agent_post(caption)
+    print("Scheduled:", result)
     return 0
 
 

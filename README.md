@@ -1,123 +1,52 @@
-# ai-agent-social-poster-example
+# AI agent social poster — let an autonomous agent post across 14 creator platforms via one API
 
-> Example integration — an **autonomous social agent** that handles **AI agent posting** to a creator's connected social platforms, using a `skill.md` file + an API key and the [ModelVI agent endpoint](https://agents.modelvi.com).
+An **example integration** showing **AI agent posting**: give any LLM agent (Claude, GPT, or your own) a `skill.md` + an API key, and it publishes on a creator's behalf across OnlyFans and 13 other platforms — through one call to the [ModelVI](https://modelvi.com/sign-up?utm_source=github&utm_medium=owned-track&utm_campaign=ai-agent-social-poster) partner API.
 
-**This is an EXAMPLE repository.** It demonstrates the *shape* of the integration — the auth flow, the request pattern, and the `skill.md` + API key convention. The endpoint paths and payloads in this repo are clearly-marked placeholders. For the live endpoints and request/response schemas, see **[agents.modelvi.com/docs](https://agents.modelvi.com/docs)**.
+**[▶ Get your API key →](https://modelvi.com/sign-up?utm_source=github&utm_medium=owned-track&utm_campaign=ai-agent-social-poster)** · [Agent API](https://modelvi.com/agent-api) · [Connect an agent](https://modelvi.com/link-agent) · [Pricing](https://modelvi.com/pricing)
+
+![example](https://img.shields.io/badge/example-MIT-blue) ![python](https://img.shields.io/badge/python-3.9+-green)
 
 ---
 
-## What it does
+## What this is
 
-`ai-agent-social-poster-example` shows how an AI agent can publish a post — a caption plus optional media — to one or more connected social platforms **on a creator's behalf**, through a single API call instead of a human clicking "post" in each app.
+A minimal, MIT-licensed example of an **autonomous social agent**: a `skill.md` describes the ModelVI posting capability in plain language, the agent authenticates with a partner key (`mvk_<keyId>_<secret>`), and it publishes a post across the creator's connected platforms in one `POST /schedule` call. It talks only to the public ModelVI partner API.
 
-The agent:
+**Supported platforms (codes):** `ONLYFANS FANSLY FANCENTRO F2F MALOUM LOYALFANS MYMFANS FETLIFE FOURBASED FANVUE BESTFANS FANSYME BREZZELS KNKY`.
 
-1. Reads a `skill.md` that describes the ModelVI posting capability in plain language.
-2. Authenticates to the ModelVI agent endpoint with a per-creator **API key**.
-3. Submits the post to the creator's connected accounts.
+## The `skill.md` + API key pattern
 
-That's the whole loop: give an LLM-driven agent a skill file and a key, and it can do **AI agent posting** end to end.
-
-## Why — the agency use case
-
-Creator agencies and social teams manage many accounts across many platforms. Doing that by hand does not scale: someone logs into each dashboard, reposts the same content, and tracks what went where.
-
-An **autonomous social agent** collapses that into one interface. Instead of one login per platform per creator, your agent (or your existing automation) calls one endpoint with one API key, and ModelVI fans the post out to the creator's connected platforms. This example is the smallest thing that shows the pattern working.
-
-Typical fits:
-
-- A content-ops workflow that drafts and schedules posts, then hands the approved post to an agent to publish.
-- An internal tool where an operator approves a caption and the agent distributes it.
-- An LLM agent (Claude, GPT, or your own) that reads `skill.md` and posts as a tool call.
-
-## How it works — the `skill.md` + API key pattern
-
-The convention is simple: an AI agent is handed a short, human-readable `skill.md` describing the capability, plus an API key for auth. The agent then calls the endpoint as a tool. An illustrative `skill.md` (paths are placeholders — confirm the real ones in the [docs](https://agents.modelvi.com/docs)):
+Hand your agent a short skill file and a key; it calls the API as a tool:
 
 ```markdown
 ---
 name: modelvi-social-poster
-description: Publish a post to a creator's connected social platforms via ModelVI.
+description: Publish a post across a creator's connected platforms via ModelVI.
 ---
-
-# ModelVI Social Poster (skill)
-
-Use this skill to publish a post on the creator's behalf.
-
-- **Auth:** send the API key in the `Authorization: Bearer <API_KEY>` header.
-- **Endpoint:** see https://agents.modelvi.com/docs for the live path.
-
-Inputs:
-- `caption` (string, required): the post text.
-- `platforms` (array, optional): target platforms; omit to use the creator's defaults.
-- `media_urls` (array, optional): public URLs of images/video to attach.
-
-Return the post id(s) from the response. On error, surface the message to the operator.
+# ModelVI Social Poster
+- Auth: `Authorization: Bearer <MODELVI_API_KEY>`
+- Endpoint: POST https://modelvi.com/api/partner/v1/schedule
+- Body: { model, platforms:[CODES], title, scheduledAt (ISO-8601 UTC), type:1|2|3 }
+- Full reference: https://modelvi.com/agent-api
+Return the payload from { success, payload }. On 401, tell the operator to get a key.
 ```
 
-## Requirements
-
-- Python 3.9+
-- A ModelVI agent API key — **[get one at agents.modelvi.com](https://agents.modelvi.com)**
-
-The example uses only the Python standard library, so there is nothing to `pip install`.
-
-## Install
+## Quickstart
 
 ```bash
-git clone https://github.com/<your-org>/ai-agent-social-poster-example.git
-cd ai-agent-social-poster-example
+pip install requests
+export MODELVI_API_KEY="mvk_<keyId>_<secret>"
+python example.py "New drop is live ✨"
 ```
 
-## Configuration
+See [`example.py`](./example.py) for the full flow: read a model id from `GET /model_list`, then post via `POST /schedule`.
 
-Copy the example env file and fill in your values:
+## Use cases / keywords
 
-```bash
-cp .env.example .env
-```
-
-`.env.example`:
-
-```dotenv
-# Your ModelVI agent API key — get one at https://agents.modelvi.com
-API_KEY=your_api_key_here
-
-# Base URL of the ModelVI agent endpoint.
-# PLACEHOLDER — replace with the real base URL from https://agents.modelvi.com/docs
-BASE_URL=https://agents.modelvi.com/api
-```
-
-Load it into your shell (or use your own dotenv loader):
-
-```bash
-export $(grep -v '^#' .env | xargs)
-```
-
-## Usage
-
-```bash
-python post_via_agent.py "Hello from my autonomous social agent"
-```
-
-See [`post_via_agent.py`](./post_via_agent.py) for the full, commented flow. It reads `API_KEY` from the environment, builds a post payload, and calls a clearly-marked placeholder endpoint. Swap the placeholder path for the real one from the docs before pointing it at production.
-
-## → Get your API key
-
-**AI agent posting requires a ModelVI API key.**
-
-👉 **[Get your API key at agents.modelvi.com](https://agents.modelvi.com)**
-
-Learn more: [agents.modelvi.com](https://agents.modelvi.com) · Live endpoints and schemas: [agents.modelvi.com/docs](https://agents.modelvi.com/docs)
+**ai agent posting** · **autonomous social agent** · ai social media agent · mcp · skill.md · onlyfans posting api · fansly posting api · post to 14 creator platforms from one agent tool call.
 
 ## Honest note
 
-This repository is an **example integration**, not a production SDK. The endpoint paths, headers, and payload fields shown here are placeholders chosen to illustrate the pattern. Do not assume any response schema in this repo is real — the authoritative contract lives at **[agents.modelvi.com/docs](https://agents.modelvi.com/docs)**.
+Minimal example — no retries/pagination/media upload. Authoritative reference: **[modelvi.com/agent-api](https://modelvi.com/agent-api)** · **[modelvi.com/partner-api-docs](https://modelvi.com/partner-api-docs)**. Public API only; no proprietary logic. (See also the [ModelVI MCP server](https://modelvi.com/agent-api) for the same capability as an MCP tool.)
 
-## Keywords
-
-ai agent posting · autonomous social agent · skill.md · API key · social media automation API · AI social media agent
-
-## License
-
-MIT
+**[▶ Get your API key →](https://modelvi.com/sign-up?utm_source=github&utm_medium=owned-track&utm_campaign=ai-agent-social-poster)** — see [pricing](https://modelvi.com/pricing). MIT licensed.

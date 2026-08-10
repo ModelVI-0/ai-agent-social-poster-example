@@ -1,36 +1,34 @@
 ---
-title: ai-agent-social-poster-example
-description: Example of AI agent posting — an autonomous social agent that publishes on a creator's behalf via skill.md + API key, powered by the ModelVI agent endpoint.
+title: AI agent social poster — ModelVI example
+description: Let an autonomous AI agent post across 14 creator platforms via skill.md + an API key, powered by the ModelVI partner API.
 ---
 
-# ai-agent-social-poster-example
+# AI agent social poster — autonomous posting via skill.md + API key
 
-**An example of AI agent posting — an autonomous social agent that publishes on a creator's behalf via `skill.md` + an API key.**
-
-Powered by the [ModelVI agent endpoint](https://agents.modelvi.com).
-
-> **This is an example integration.** The endpoint paths and payloads are placeholders that illustrate the pattern. The live contract is at [agents.modelvi.com/docs](https://agents.modelvi.com/docs).
-
-## What this is
-
-A minimal, honest example showing the shape of ModelVI's agent posting flow: a `skill.md` that describes the capability, a per-creator API key for auth, and one call that publishes a post across a creator's connected platforms.
+An example of **AI agent posting**: give any LLM agent a `skill.md` + an API key and
+it publishes on a creator's behalf across OnlyFans and 13 other platforms, through the
+[ModelVI](https://modelvi.com/sign-up?utm_source=github&utm_medium=owned-track&utm_campaign=ai-agent-social-poster)
+partner API.
 
 ## The pattern
 
-1. Your AI agent reads `skill.md`.
-2. It authenticates with an **API key**.
-3. It posts on the creator's behalf — **autonomous social agent** posting in one call.
-
-## Why agencies use it
-
-Managing many creators across many platforms by hand does not scale. An autonomous social agent turns "one login per platform per creator" into a single authenticated call, so your automation can distribute an approved post without manual reposting.
+1. The agent reads `skill.md` (plain-language capability).
+2. It authenticates with a partner key (`mvk_<keyId>_<secret>`).
+3. It calls `POST /schedule` — one call, published across the creator's connected platforms.
 
 ## Get started
 
-- Read the [README on GitHub](https://github.com/<your-org>/ai-agent-social-poster-example)
-- **[Get your API key →](https://agents.modelvi.com)**
-- [Live endpoints and docs](https://agents.modelvi.com/docs)
+- **[Get your API key →](https://modelvi.com/sign-up?utm_source=github&utm_medium=owned-track&utm_campaign=ai-agent-social-poster)**
+- Agent API reference: [modelvi.com/agent-api](https://modelvi.com/agent-api)
+- Connect an agent: [modelvi.com/link-agent](https://modelvi.com/link-agent)
 
-## Keywords
+## Use cases / keywords
 
-ai agent posting · autonomous social agent · skill.md · API key · social media automation API
+ai agent posting · autonomous social agent · ai social media agent · mcp · skill.md ·
+onlyfans posting api · fansly posting api.
+
+> **Minimal example.** Authoritative endpoints: [modelvi.com/agent-api](https://modelvi.com/agent-api) ·
+> [modelvi.com/partner-api-docs](https://modelvi.com/partner-api-docs).
+
+- API key: <https://modelvi.com/sign-up?utm_source=github&utm_medium=owned-track&utm_campaign=ai-agent-social-poster>
+- Pricing: <https://modelvi.com/pricing>
