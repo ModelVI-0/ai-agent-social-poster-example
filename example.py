@@ -68,7 +68,7 @@ def agent_post(caption, platforms=None):
     when = datetime.now(timezone.utc) + timedelta(minutes=5)
     body = {
         "model": model,
-        "platforms": platforms or ["ONLYFANS", "FANSLY", "FANCENTRO"],
+        "platforms": platforms or ["ONLYFANS", "FAN", "FNC"],
         "title": caption,                                  # caption field is `title`
         "scheduledAt": when.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "type": TYPE_FREE,

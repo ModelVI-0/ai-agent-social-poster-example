@@ -12,7 +12,7 @@ An **example integration** showing **AI agent posting**: give any LLM agent (Cla
 
 A minimal, MIT-licensed example of an **autonomous social agent**: a `skill.md` describes the ModelVI posting capability in plain language, the agent authenticates with a partner key (`mvk_<keyId>_<secret>`), and it publishes a post across the creator's connected platforms in one `POST /schedule` call. It talks only to the public ModelVI partner API.
 
-**Supported platforms (codes):** `ONLYFANS FANSLY FANCENTRO F2F MALOUM LOYALFANS MYMFANS FETLIFE FOURBASED FANVUE BESTFANS FANSYME BREZZELS KNKY`.
+**Supported platforms (codes):** `ONLYFANS FAN FNC F2F MALOUM LOYALFANS MYMFANS FETLIFE FOURBASED FANVUE BESTFANS FANSYME BREZZELS KNKY`.
 
 ## The `skill.md` + API key pattern
 
