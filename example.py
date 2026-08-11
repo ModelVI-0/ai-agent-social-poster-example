@@ -62,7 +62,8 @@ def _first_model_id():
 def agent_post(caption, platforms=None):
     """The core 'AI agent posting' call: publish on the creator's behalf.
 
-    Omit `platforms` to target all connected creator platforms.
+    `platforms` must be an explicit list of platform CODES. Omit it to fall
+    back to the default set below (ONLYFANS, FAN, FNC).
     """
     model = _first_model_id()
     when = datetime.now(timezone.utc) + timedelta(minutes=5)
